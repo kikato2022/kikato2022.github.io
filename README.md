@@ -1,7 +1,7 @@
 # kikato
 [github](https://github.com/kikato2022)
 
-[csdn](https://blog.csdn.net/weixin_40064300）
+[csdn](https://blog.csdn.net/weixin_40064300)
 
 
 ## 项目
