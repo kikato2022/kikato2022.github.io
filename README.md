@@ -1,5 +1,6 @@
-# hello, this is kikato
+# kikato
 [github](https://github.com/kikato2022)
+[CSDN](https://blog.csdn.net/weixin_40064300）
 
 
 ## 项目
