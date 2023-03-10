@@ -4,8 +4,11 @@
 
 ## 项目
 
+**kikajson** : 一个使用C语言实现的简易JSON库 [github](https://github.com/kikato2022/kikajson)
+
 ### 课程项目
 **kikassembler**（计算机系统结构-THU） :  将一个汇编指令子集转换成机器码的小工具 [github](https://github.com/kikato2022/kikassembler)
+
 
 
 ## 读过的书
