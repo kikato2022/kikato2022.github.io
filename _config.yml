@@ -2,3 +2,8 @@ theme: jekyll-theme-minimal
 
 title: Kikato
 description: "graphics explorer"
+
+# Site Author
+author:
+  name             : "Kikato"
+  #avatar           : "images/github.jpg"
