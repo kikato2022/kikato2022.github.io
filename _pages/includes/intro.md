@@ -6,6 +6,8 @@ I am free now !
 
 I got my bachelor's degree from the Department of Computer Science and Technology, Tsinghua University, supervised by Prof. [Pin Tao (陶品)](https://www.cs.tsinghua.edu.cn/info/1117/3542.htm).
 
-&nbsp; These works are open source to the best of my ability.
+I am interested in Computer Graphics.
 
-&nbsp; I am interested in Computer Graphics.
+These works are open source to the best of my ability.
+
+ 
