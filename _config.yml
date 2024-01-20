@@ -6,28 +6,28 @@
 # `jekyll serve`. If you change this file, please restart the server process.
 
 # Site Settings
-title                    : "Kai Li (李凯)"
+title                    : "Kikato"
 description              : "First-year master student at Department of Computer Science and Technology, Tsinghua University"
 repository               : "JusperLee/JusperLee.github.io"
 google_scholar_stats_use_cdn : false
 
 # google analytics
-google_analytics_id      : G-F332SY6S79
+#google_analytics_id      : G-F332SY6S79
 
 # SEO Related
-google_site_verification : RRIdCJIVOlJkiMrySoTdUAhx6LM2id2E1ccsmTyZayE
-bing_site_verification   : 3F36865EEA0A46A66905E7B906C63958
-baidu_site_verification  : code-lA9M566LQo
+#google_site_verification : RRIdCJIVOlJkiMrySoTdUAhx6LM2id2E1ccsmTyZayE
+#bing_site_verification   : 3F36865EEA0A46A66905E7B906C63958
+#baidu_site_verification  : code-lA9M566LQo
 
 # Site Author
 author:
-  name             : "Kai Li (李凯)"
-  avatar           : "images/github.jpg"
-  bio              : "Tsinghua University"
-  location         : "Beijing, China"
-  employer         :
+  name: "Kikato"
+  avatar: "images/github.jpg"
+  bio: "Tsinghua University"
+  location: "Beijing, China"
+  employer:
   pubmed           : 
-  googlescholar    : #"https://scholar.google.com.hk/citations?user=fHkHcMsAAAAJ&hl=en"
+  googlescholar    : 
   email            : #"lk21@mails.tsinghua.edu.cn"
   researchgate     :  # example: "https://www.researchgate.net/profile/yourprofile"
   uri              :
@@ -37,7 +37,7 @@ author:
   flickr           :
   facebook         :
   foursquare       :
-  github           : "JusperLee"
+  github           : "Kikato2022"
   google_plus      :
   keybase          :
   instagram        :
@@ -57,7 +57,7 @@ author:
   xing             :
   youtube          :
   wikipedia        :
-  zhihu            : li-kai-34-50
+  zhihu            : 
 
 
 # Reading Files
