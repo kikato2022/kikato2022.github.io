@@ -1,9 +1,2 @@
-theme: jekyll-theme-minimal
-
-title: Kikato
-description: "graphics explorer"
-
-# Site Author
-author:
-  name: "jieli"
-  #avatar           : "images/github.jpg"
+collections:
+  authors:
