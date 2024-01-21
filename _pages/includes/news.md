@@ -1,4 +1,5 @@
 # 🔥 News
+- *2024.01*: I set up this personal homepage.
 - *2023.09*: .
 - *2023.08*: .
 - *2023.07*: .
