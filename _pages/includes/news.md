@@ -8,7 +8,7 @@
 - *2023.03*: .
 - *2023.02*: .
 - *2023.01*: .
-- <details>
+<details>
 <summary markdown="span">Click for More</summary>
 <ul>
 <li> <i>2022.06</i>:  One paper is accepted in my dream. </li>
