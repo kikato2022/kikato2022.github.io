@@ -29,6 +29,7 @@ author:
   pubmed: 
   googlescholar: 
   email: "kikato_2021@163.com"
+  zhihu:
   researchgate:  # example: "https://www.researchgate.net/profile/yourprofile"
   uri:
   bitbucket:
@@ -57,8 +58,6 @@ author:
   xing:
   youtube:
   wikipedia:
-  zhihu: 
-
 
 # Reading Files
 include:
