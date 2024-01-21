@@ -7,8 +7,8 @@
 
 # Site Settings
 title                    : "Kikato"
-description              : "First-year master student at Department of Computer Science and Technology, Tsinghua University"
-repository               : "JusperLee/JusperLee.github.io"
+description              : #"First-year master student at Department of Computer Science and Technology, Tsinghua University"
+repository               : 
 google_scholar_stats_use_cdn : false
 
 # google analytics
