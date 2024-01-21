@@ -19,8 +19,10 @@ redirect_from:
 
 {% include_relative includes/others.md %}
 
+<br>
+<br>
+<br>
 <center>
-    <script type='text/javascript' id='clustrmaps' src='//cdn.clustrmaps.com/map_v2.js?cl=ffffff&w=300&t=tt&d=pGgE1hMket84twOks8hu76lWjl5ORukOJRPcVR9nRBI&co=2d78ad&ct=ffffff&cmo=3acc3a&cmn=ff5353'></script>
-
+    <script type="text/javascript" id="clustrmaps" src="//clustrmaps.com/map_v2.js?d=rFn1UFz0i_jw_SyhjbAD8nOQeeNaC-oxwGWWWiX8-YE&cl=ffffff&w=a"></script>
     <br> &copy; Kikato | Last updated: Jan. 21th, 2024 | Theme by Yi Ren
 </center>
