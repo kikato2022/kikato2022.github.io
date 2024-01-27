@@ -1,1 +1,1 @@
-# 🎖 Honors and Awards
+# 🎖 :trophy: Honors and Awards
