@@ -124,6 +124,9 @@
       {% if author.csdn %}
        <li><a href="https://blog.csdn.net/{{ author.csdn }}"> <i class="fa fa-copyright" aria-hidden="true"></i> CSDN</a></li>
       {% endif %}
+      {% if author.leetcode %}
+       <li><a href="https://leetcode.cn/u/{{ author.leetcode }}/"> <i class="terminal" aria-hidden="true"></i> Leetcode</a></li>
+      {% endif %}
     </ul>
       <div class="author__urls_sm">
       {% if author.uri %}
