@@ -1,1 +1,1 @@
-# 🎖🏆 Honors and Awards
+# 🏆 Honors and Awards
