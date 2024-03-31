@@ -23,8 +23,8 @@ google_analytics_id:
 author:
   name: "Kikato"
   avatar: "images/github.jpg"
-  bio: "Tsinghua University"
-  location: "Beijing, China"
+  bio: "Shenzhen University"
+  location: "Shenzhen, China"
   employer:
   pubmed: 
   googlescholar: 
@@ -32,6 +32,7 @@ author:
   zhihu: "mou-cheng-jie-64"
   csdn: "weixin_40064300"
   leetcode: "silent_code"
+  github: "kikato2022"
   researchgate:  # example: "https://www.researchgate.net/profile/yourprofile"
   uri:
   bitbucket:
@@ -40,7 +41,6 @@ author:
   flickr:
   facebook:
   foursquare:
-  github: "kikato2022"
   google_plus:
   keybase:
   instagram:
