@@ -3,7 +3,7 @@
 - *2018.09 - 2022.06*, Undergraduate, [Department of Computer Science and Technology](https://www.cs.tsinghua.edu.cn/), [Tsinghua Univeristy](https://www.tsinghua.edu.cn/), Beijing, China
 
 # 💻 Internships
-
+- *2022.06 - 2024.06*, QiYuan Laboratory, Beijing, China
 
 # 🏁 Services
 
