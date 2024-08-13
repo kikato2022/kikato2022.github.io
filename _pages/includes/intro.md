@@ -6,7 +6,7 @@ I am now a graduate student at [Visual Computing Research Center](https://vcc.sz
 
 I got my bachelor's degree from the Department of Computer Science and Technology, Tsinghua University, supervised by Prof. [Pin Tao (陶品)](https://www.cs.tsinghua.edu.cn/info/1117/3542.htm).
 
-I am now interested in Computer Graphics and Robotics, especially in human-object interaction and object manipulation.
+I am now interested in Computer Graphics and Robotics, especially in human-object interaction and object manipulation, which mainly involves knowledge related to artificial intelligence, perception, control, decision-making and planning.
 
 These works are open source to the best of my ability.
 
