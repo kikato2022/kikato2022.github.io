@@ -5,7 +5,7 @@
 
 ## CG
 
-[<a href="https://kikato.github.io/projects/vividex.html" target="_blank" rel="noopener">project</a>]
+[<a href="https://kikato2022.github.io/projects/vividex" target="_blank" rel="noopener">project</a>]
 
 ## CV
 
