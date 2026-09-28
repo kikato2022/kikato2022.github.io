@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MANO-VLA &#8212; hand motion as a conditioning modality for VLA models</title>
+<meta name="description" content="MANO-VLA: a pi0-based Vision-Language-Action model that takes MANO hand-motion sequences as a first-class conditioning modality, with text-only, MANO-only and text+MANO inference from one set of weights.">
+<link rel="canonical" href="https://kikato2022.github.io/projects/mano-vla/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MANO-VLA">
+<meta property="og:title" content="MANO-VLA &#8212; hand motion as a conditioning modality for VLA models">
+<meta property="og:description" content="One pi0 backbone, three inference modes (text-only, MANO-only, text+MANO) switched by modality dropout. Frozen hand-motion tokenizer, discrete MANO tokens, simulation-only supervision.">
+<meta property="og:url" content="https://kikato2022.github.io/projects/mano-vla/">
+<meta property="og:image" content="https://kikato2022.github.io/projects/mano-vla/preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231d4ed8'/><text x='32' y='45' font-family='system-ui,sans-serif' font-size='38' font-weight='700' fill='%23ffffff' text-anchor='middle'>M</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">MANO<span>-</span>VLA</div>
+    <nav class="topnav">
+      <a href="#abstract">Abstract</a>
+      <a href="#modes">Modes</a>
+      <a href="#method">Method</a>
+      <a href="#data">Data</a>
+      <a href="#training">Training</a>
+      <a href="#results">Results</a>
+      <a href="#status">Status</a>
+      <a href="#repo">Repository</a>
+    </nav>
+    <a class="lang" href="zh.html" lang="zh">&#20013;&#25991;</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <p class="kicker">Research project &#183; in progress</p>
+    <h1>MANO-VLA
+      <small>Hand motion as a first-class conditioning modality for Vision-Language-Action models</small>
+    </h1>
+    <p class="lede">
+      One <strong>&#960;<sub>0</sub></strong> backbone, <strong>three inference modes</strong> &#8212; text-only, MANO-only and
+      text&nbsp;+&nbsp;MANO &#8212; switched by modality dropout. Hand-motion sequences are tokenized into
+      <strong>discrete MANO tokens</strong> and appended to the multimodal prefix, so the action expert attends to
+      them without any new fusion module.
+    </p>
+    <ul class="pills">
+      <li>Base model: &#960;<sub>0</sub> (PaliGemma-3B + ~300M action expert)</li>
+      <li>MANO tokenizer: Being-H0 GRQ-VAE, frozen</li>
+      <li>Data: The Imitator Game (human + simulation)</li>
+      <li>Supervision: simulation only</li>
+    </ul>
+    <div class="linkrow">
+      <a class="btn primary" href="#method">Architecture</a>
+      <a class="btn" href="#data">Data</a>
+      <a class="btn" href="#results">Held-out numbers</a>
+      <a class="btn" href="#repo">Repository map</a>
+      <!-- TODO: replace with a real link once the code repository is public -->
+      <span class="btn" aria-disabled="true" title="not published yet">Code &#183; coming soon</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>53</b><span>manipulation tasks, 8 levels each (L0&#8211;L3 + L*-extend)</span></div>
+      <div class="stat"><b>10,760</b><span>human segments with extracted MANO (30 fps)</span></div>
+      <div class="stat"><b>16,240</b><span>re-collected simulation episodes, 212 variants</span></div>
+      <div class="stat"><b>1,200</b><span>episodes with three-view video (H1/H2/H3)</span></div>
+    </div>
+  </div>
+</div>
+
+<section id="abstract">
+  <div class="wrap">
+    <h2>Abstract</h2>
+    <p class="sub">Why hand motion, and what we do with it.</p>
+    <p>
+      Vision-Language-Action models condition on pixels and language. Human manipulation, however, is described
+      most precisely by the motion of the hands. MANO-VLA asks a simple question: <b>can a sequence of MANO hand
+      poses act as a task-level prompt for a robot policy?</b>
+    </p>
+    <p>
+      We build on <b>&#960;<sub>0</sub></b> &#8212; a PaliGemma-3B vision-language expert plus a ~300M-parameter
+      action expert &#8212; and append <b>discrete hand-motion tokens</b> to the multimodal prefix. Hand motion is
+      tokenized by a <b>frozen Being-H0 GRQ-VAE</b> (4,096-entry codebook, <i>k</i>&nbsp;=&nbsp;4 residual layers) and mapped to
+      2,048-d prefix tokens through codebook, part, group, layer, hand and time embeddings. Because the MANO tokens
+      live in the same prefix block as the images and the text, the action expert attends to them automatically:
+      no extra fusion module is needed and no vocabulary is extended.
+    </p>
+    <p>
+      A single set of weights supports <b>three inference modes</b>, selected at training time by modality dropout
+      over {text, MANO}: <i>text-only</i>, <i>MANO-only</i>, and <i>text&nbsp;+&nbsp;MANO</i>. Supervision comes only from
+      simulation (absolute joint targets); human recordings supply MANO tokens but never a loss. Training follows
+      staged unfreezing: a kinematics self-supervised Stage&nbsp;A, then the action expert plus the MANO side,
+      then PaliGemma LoRA.
+    </p>
+    <div class="note">
+      <b>Status.</b> The full chain &#8212; data &#8594; transform &#8594; model &#8594; training &#8594; checkpoint &#8594; held-out
+      evaluation &#8212; runs end to end. What exists today is a 600-step smoke run and a working evaluation
+      protocol, not a finished result. Numbers below are labelled with their measurement date.
+    </div>
+  </div>
+</section>
+
+<section id="modes">
+  <div class="wrap">
+    <h2><span class="num">01</span>Three modes, one set of weights</h2>
+    <p class="sub">
+      Images and proprioceptive state are never dropped. Modality dropout is sampled independently on the text
+      prompt and on the whole MANO segment, which yields exactly three combinations.
+    </p>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Text-only</h3>
+        <p>A conventional VLA: images, robot state and a language instruction. The MANO segment is deleted
+          entirely, tag included.</p>
+        <span class="tag">image + state + text &#8594; action</span>
+      </div>
+      <div class="card mano">
+        <h3>MANO-only</h3>
+        <p>No language at all. The hand-motion tokens alone specify the task, which is what makes
+          &ldquo;what does MANO carry that text cannot?&rdquo; testable.</p>
+        <span class="tag">image + state + MANO &#8594; action</span>
+      </div>
+      <div class="card mano">
+        <h3>Text + MANO</h3>
+        <p>Both modalities are present; the model decides how to weigh them. This is the default mode at
+          training time (probability 0.4).</p>
+        <span class="tag">image + state + text + MANO &#8594; action</span>
+      </div>
+    </div>
+
+    <h3>Dropout specification</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Mode</th><th>Images (3)</th><th>State</th><th>Text</th><th>MANO segment</th><th class="num">p (init)</th></tr></thead>
+        <tbody>
+          <tr><td><code>text_only</code></td><td>yes</td><td>yes</td><td>yes</td><td>deleted, tag included</td><td class="num">0.3</td></tr>
+          <tr><td><code>mano_only</code></td><td>yes</td><td>yes</td><td>deleted</td><td>yes</td><td class="num">0.3</td></tr>
+          <tr><td><code>text+mano</code></td><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="num">0.4</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:14px">
+      Whole segments are kept or deleted, never individual tokens: once <code>&lt;mano&gt;</code> appears, all <i>N</i>
+      positions are filled, and a missing hand becomes an <i>absent</i> placeholder rather than a shorter sequence.
+      Losses are reported per mode, otherwise &ldquo;works on its own&rdquo; cannot be verified.
+    </p>
+  </div>
+</section>
+
+<section id="method">
+  <div class="wrap">
+    <h2><span class="num">02</span>Method</h2>
+    <p class="sub">
+      A frozen tokenizer on the data side; four lines of wiring on the model side.
+    </p>
+
+    <figure>
+      <img src="figure_arch.svg" alt="Top: human video is processed by HaWoR into 162-d MANO parameters, then by a frozen Being-H0 GRQ-VAE into discrete token ids, then projected into 2048-d MANO prefix tokens. Bottom: the pi0 prefix layout, with block A holding front and wrist views, text and the MANO segment at att = 0, block B holding the 18-d state at att = 1, and block C holding the 50-step action chunk.">
+      <figcaption>
+        The frozen half turns human video into discrete hand-motion tokens; the trained half places them in the
+        &pi;<sub>0</sub> prefix, in the same block as the images and the text.
+      </figcaption>
+    </figure>
+
+    <h3>Prefix layout and attention</h3>
+    <p>
+      &pi;<sub>0</sub> marks block boundaries with a per-token flag <code>att</code>; visibility is computed as a
+      cumulative sum, so a token never sees a later block. MANO-VLA only adds tokens inside block A and extends the
+      flag vector, which gives the intended visibility for free:
+    </p>
+    <ul class="clean">
+      <li><b>Block A</b> &#8212; three images (256 tokens each), the text prompt (up to 256 tokens) and the MANO segment (about 1,024 tokens), all with <code>att = 0</code>, bidirectional inside the block.</li>
+      <li><b>Block B</b> &#8212; the 18-d robot state projected to one token, <code>att = 1</code>: it sees the whole prefix but not the actions.</li>
+      <li><b>Block C</b> &#8212; the action chunk, <code>att = 1, 0, &#8230;, 0</code>: the action expert sees everything.</li>
+    </ul>
+    <p>
+      A 23-case self-check on CPU (<code>project/scripts/smoke_pi0_mano_prefix.py</code>) verifies shape,
+      parameter count, the absent-hand path, gradient flow, mask semantics and the three modes bit-for-bit against
+      the &pi;<sub>0</sub> formula.
+    </p>
+
+    <h3>The MANO side</h3>
+    <p>
+      Every token carries codebook id, part (wrist / finger), group, residual layer, hand and the first frame it
+      covers. Its embedding is summed and projected once:
+    </p>
+<pre><span class="c"># per token, one projection layer; the vocabulary is not extended</span>
+e = proj( motion_emb[id + 4096*part] + group_emb[group] + layer_emb[layer]
+          + hand_emb[hand] + time_proj( time_pe(frame0 / fps) ) )
+<span class="c"># a missing hand swaps the content for absent_emb[hand] and keeps the time PE</span>
+<span class="c"># &lt;mano&gt; and &lt;/mano&gt; are two learned 2048-d vectors</span></pre>
+    <p>
+      Time is encoded in <i>seconds</i>, not token index, so a token is anchored to a real frame number and the
+      4-frame stride of the tokenizer is decoupled from the position encoding. Positions follow the same rule as
+      the text: a 1-token position is interleaved with 16-d observations, so the state block is projected from 18
+      to the model width and the action dimension is 16.
+    </p>
+
+    <h3>Cost of a long MANO prefix</h3>
+    <p>
+      One token covers 4 frames <i>per (part, group, layer) chain</i>, and there are 2&#8239;&#215;&#8239;2&#8239;&#215;&#8239;<i>k</i>
+      such chains. At <i>k</i> = 4 a single hand emits 64 tokens per 15-frame window, measured median 1,024 tokens
+      per sample (both hands). The MANO prefix therefore costs roughly 4&#215; the text-only forward pass
+      (109&#8239;s vs 466&#8239;s on the same 600 samples), and compressing it is an open decision.
+    </p>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <h2><span class="num">03</span>Data</h2>
+    <p class="sub">
+      The Imitator Game only: 53 bimanual manipulation tasks, four skill levels, each level with a human half and
+      a simulation half. Re-collected simulation data supersedes the shipped episodes wherever it exists.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Quantity</th><th class="num">Value</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Tasks / levels</td><td class="num">53 / 8</td><td>L0&#8211;L3 plus one <code>L*-extend</code> per level</td></tr>
+          <tr><td>Human segments with extracted MANO</td><td class="num">10,760</td><td><code>data/imitator_game/mano/&lt;task&gt;/&lt;level&gt;/human/</code></td></tr>
+          <tr><td>Being-H0 162-d conversions</td><td class="num">10,760</td><td>plus 278 <code>_absent</code> variants for missing-hand frames</td></tr>
+          <tr><td>MANO payload on disk</td><td class="num">2.54 GB</td><td>npz only, 30 fps, wrist-local frames</td></tr>
+          <tr><td>Re-collected simulation episodes</td><td class="num">16,240</td><td>212 variants under <code>_recollect/segments/</code></td></tr>
+          <tr><td>Episodes with three-view video</td><td class="num">1,200</td><td>H1/H2/H3 &#215; 8 levels &#215; 50 episodes</td></tr>
+          <tr><td>Units supporting all three modes</td><td class="num">201 / 223</td><td>11 <code>(task, level)</code> units are text-only by construction</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Supervision and pairing</h3>
+    <ul class="clean">
+      <li>A training sample is a simulation transition: <code>state = qpos[t]</code> (18-d) and <code>actions = action[t : t+50]</code> (50&#8239;&#215;&#8239;16 absolute joint targets).</li>
+      <li>MANO and text are borrowed from the same task and the same level, paired at random; an <code>L*-extend</code> episode falls back to its base level and is tagged <code>mano_borrowed</code>.</li>
+      <li>Text labels come from the simulation description field. Task descriptions are shared by a whole level, which is exactly why a plain language cross-entropy is a weak objective &#8212; see Stage&nbsp;A below.</li>
+      <li>Human recordings are never supervised in the first phase; they exist to supply MANO tokens.</li>
+    </ul>
+
+    <div class="note warn">
+      <b>Data hygiene.</b> Handedness is decided by a side prior (leftmost box = left hand), not by the detector
+      class, after a full-database audit found flicker and whole-hand dropouts in the older pipeline. Simulation
+      episodes are replayed through the official entry points only, and the L2 level needs a mirror-slot
+      restoration step that the official replayer does not perform. These rules are recorded in
+      <code>AGENTS.md</code> and are not re-litigated per session.
+    </div>
+  </div>
+</section>
+
+<section id="training">
+  <div class="wrap">
+    <h2><span class="num">04</span>Training</h2>
+    <p class="sub">Staged unfreezing, and an evaluation protocol that can actually reject an idea.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Stage</th><th>Trainable</th><th>Objective</th></tr></thead>
+        <tbody>
+          <tr><td><b>A</b></td><td>MANO side</td><td>Kinematic self-supervision (reconstruction + temporal contrast), with a small language cross-entropy as an auxiliary term. Plain text CE alone was rejected: text tops out at a few bits per task-and-level unit, while hand motion is far denser.</td></tr>
+          <tr><td><b>B1</b></td><td>Action expert + MANO side (583.5M)</td><td>Flow-matching action loss; the VLM stays frozen.</td></tr>
+          <tr><td><b>B2</b></td><td>+ PaliGemma LoRA (r = 16)</td><td>Low-rank adaptation of the vision and language paths.</td></tr>
+          <tr><td><b>B3</b></td><td>Full fine-tune (optional)</td><td>Mixed with Stage-A batches so the MANO path is not overwritten by the action loss.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Evaluation protocol</h3>
+    <p>
+      Splits are taken at the episode level, not the frame level: inside every <code>(task, level)</code> group,
+      one episode in <code>stride</code> goes to validation with a fixed stride, so two runs that use the same
+      <code>val_frac</code> necessarily land on the same episodes. On H1/H2/H3 &#215; 8 levels this gives
+      <b>1,080 training episodes / 412,374 samples</b> and <b>120 validation episodes / 45,611 samples</b>.
+    </p>
+    <p>
+      Evaluation is deterministic &#8212; the flow-matching noise is seeded &#8212; so checkpoints are directly
+      comparable. Results are reported per mode, per <code>(mode, task, level)</code> and per action dimension, always
+      next to a &ldquo;predict zero&rdquo; baseline so that a model which has learned nothing is obvious.
+      Three levels of evidence are used: offline codebook reconstruction curves, held-out action-chunk MAE, and
+      only finally closed-loop success rate in the simulator.
+    </p>
+
+    <h3>Preliminary run</h3>
+    <p>
+      Stage B1, from released &#960;<sub>0</sub> weights on H1/H2/H3: 600 steps, batch 8, 3.4&#8239;s per step, peak
+      21.3&#8239;GB of 24&#8239;GB. The table is an excerpt of the logged points (every 200th step, plus the first).
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th class="num">Step</th><th class="num">Total loss</th><th class="num">text_only</th><th class="num">mano_only</th><th class="num">text+mano</th></tr></thead>
+        <tbody>
+          <tr><td class="num">20</td><td class="num">1.5596</td><td class="num">1.5851</td><td class="num">1.5557</td><td class="num">1.5463</td></tr>
+          <tr><td class="num">100</td><td class="num">1.2549</td><td class="num">1.2332</td><td class="num">1.0805</td><td class="num">1.0728</td></tr>
+          <tr><td class="num">300</td><td class="num">0.7496</td><td class="num">0.2441</td><td class="num">0.1782</td><td class="num">0.1802</td></tr>
+          <tr><td class="num">600</td><td class="num">0.4302</td><td class="num">0.1684</td><td class="num">0.1920</td><td class="num">0.2175</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:14px">
+      All three modes decrease; none is sacrificed for another. Individual log points are noisy because each
+      aggregates only 160 samples with freshly drawn flow-matching noise, so the trend matters, not the point.
+    </p>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <h2><span class="num">05</span>Held-out numbers</h2>
+    <p class="sub">
+      Mean absolute error of generated action chunks on the held-out episodes, in the normalised
+      [&#8722;1,&#8239;1] space, 600 samples per mode.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Checkpoint</th><th class="num">text_only</th><th class="num">mano_only</th><th class="num">text+mano</th><th class="num">predict-zero baseline</th></tr></thead>
+        <tbody>
+          <tr><td>Stage B1, step 200</td><td class="num">0.7652</td><td class="num best">0.5046</td><td class="num best">0.5062</td><td class="num">0.5349</td></tr>
+          <tr><td>Stage B1, step 600</td><td class="num best">0.3495</td><td class="num">0.3736</td><td class="num">0.3734</td><td class="num">0.5349</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note warn">
+      <b>Read this as a pipeline check, not as a result.</b> It is one checkpoint, one data mix, three tasks and
+      only 600 steps. Its purpose is to show that the judgement chain produces usable numbers. The pattern &#8212;
+      at step 200 MANO modes beat the baseline while text-only is still worse than predicting zeros, at step 600
+      text-only leads &#8212; is suggestive but far too thin to be a claim, and the loss is a flow-matching MSE
+      that cannot be compared with these MAE values.
+    </div>
+  </div>
+</section>
+
+<section id="status">
+  <div class="wrap">
+    <h2><span class="num">06</span>Status and open questions</h2>
+    <p class="sub">What is done, what is running, and what is deliberately unresolved.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Item</th><th>State</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Human MANO extraction, whole database</td><td><span class="pill ok">done</span></td><td>10,760 segments, side-prior handedness, plus interpolation-filled variants</td></tr>
+          <tr><td>Simulation re-collection</td><td><span class="pill doing">ongoing</span></td><td>H1/H2/H3 complete with video; the remaining tasks hold trajectories only</td></tr>
+          <tr><td>Architecture v3 (&#960;<sub>0</sub> wiring, token contract, loaders)</td><td><span class="pill ok">done</span></td><td>self-checks pass on CPU and on the real model, locally and on the server</td></tr>
+          <tr><td>End-to-end training and evaluation chain</td><td><span class="pill ok">done</span></td><td>600-step smoke run on three tasks</td></tr>
+          <tr><td>Converged training run</td><td><span class="pill todo">not started</span></td><td>needs the long run on the training server</td></tr>
+          <tr><td>Ablations</td><td><span class="pill todo">queued</span></td><td><i>k</i> &#8712; {2,&#8239;4,&#8239;6,&#8239;8}; wrist-view size; empty-text handling in <code>mano_only</code>; Stage-A objective</td></tr>
+          <tr><td>Closed-loop success rate</td><td><span class="pill todo">not started</span></td><td>only after the held-out criterion narrows the field to one or two configurations</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Open questions</h3>
+    <ul class="clean">
+      <li>Is a ~1,024-token MANO prefix affordable, or should the tokenizer be compressed (fewer residual layers, longer stride)?</li>
+      <li>Does MANO-only training actually transfer to manipulation, or does it ride on the visual context?</li>
+      <li>Where do the three modes trade off once training is long enough for the comparison to mean something?</li>
+      <li>Does a human demonstration improve a policy on a task whose simulation half is scarce?</li>
+    </ul>
+  </div>
+</section>
+
+<section id="repo">
+  <div class="wrap">
+    <h2><span class="num">07</span>Repository map</h2>
+    <p class="sub">
+      Data and checkpoints stay out of version control; every design iteration is archived as its own file and
+      never overwritten. The code repository and those design notes are private for now; links will appear here
+      once they are public.
+    </p>
+    <dl class="map">
+      <div><dt>docs/design/</dt><dd>Design register: one file per iteration, with a status column (current, superseded, draft) and a decision log. <code>design_network_arch_v3.md</code> is the authoritative architecture.</dd></div>
+      <div><dt>docs/site/</dt><dd>This project page. Open <code>index.html</code> directly, or <code>zh.html</code> for the Chinese version.</dd></div>
+      <div><dt>project/mano_vla/pi0/</dt><dd>The MANO prefix contract and encoder, the <code>&#960;<sub>0</sub></code> wiring, the data transform and the model configuration.</dd></div>
+      <div><dt>project/mano_vla/data/</dt><dd>Dataset loaders, the three-mode sampler, episode-level splitting and normalisation statistics.</dd></div>
+      <div><dt>project/scripts/</dt><dd>Training and evaluation entries, self-checks, the MANO extraction adapter, the renderer and the simulation replay entry.</dd></div>
+      <div><dt>data/imitator_game/</dt><dd>The Imitator Game corpus: <code>by_task/&lt;task&gt;/&lt;level&gt;/{human,sim}/</code>, with per-episode MANO files alongside <code>by_task</code>.</dd></div>
+      <div><dt>benchmark/</dt><dd>Vendored reference implementations, read-only. Nothing here is edited in place.</dd></div>
+      <div><dt>AGENTS.md</dt><dd>Binding project rules and confirmed facts: the single source of truth that overrides any inference from the code.</dd></div>
+    </dl>
+
+    <h3>Reproduce</h3>
+<pre><span class="c"># CPU self-check of the MANO prefix wiring against the pi0 mask formula</span>
+python project/scripts/smoke_pi0_mano_prefix.py
+
+<span class="c"># Stage B1 training, held-out split fixed at 10% of episodes</span>
+python project/scripts/train_imitator_pi0.py \
+  --pretrained /path/to/pi0/model.safetensors --stage b1 --steps 600 \
+  --batch-size 8 --split train --val-frac 0.1 --run-name b1_h123_split
+
+<span class="c"># held-out evaluation of a checkpoint, deterministic noise, per-mode report</span>
+python project/scripts/eval_imitator_pi0.py \
+  --checkpoint .cache/train/imitator_pi0/b1_h123_split/step0000600.pt \
+  --stage b1 --split val --val-frac 0.1 --max-samples 600 \
+  --out .cache/eval/b1_h123_split_step600.json</pre>
+    <p class="sub">
+      The same <code>val_frac</code> must be passed to training and evaluation, otherwise the evaluation is not on
+      held-out data. Batch jobs run on the training server with a card list pinned by GPU UUID.
+    </p>
+  </div>
+</section>
+
+<section id="cite">
+  <div class="wrap">
+    <h2><span class="num">08</span>Citation</h2>
+    <p class="sub">The paper is not written yet, so this entry is a placeholder and the author list is not final.</p>
+<pre>@misc{manovla2026,
+  title  = {MANO-VLA: Hand Motion as a Conditioning Modality for
+            Vision-Language-Action Models},
+  author = {TODO},
+  year   = {2026},
+  note   = {Work in progress}
+}</pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span><b>MANO-VLA</b> &#183; project page</span>
+      <span>Numbers measured on the project workspace; per-episode counts re-measured 2026-09-28.</span>
+      <span><a href="zh.html" lang="zh">&#20013;&#25991;&#29256;</a></span>
+      <span>Code and design notes: private repository for now.</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MANO-VLA &#8212; 以手部运动作为 VLA 模型条件模态</title>
+<meta name="description" content="MANO-VLA：以 MANO 手部运动序列作为一等条件模态的 Vision-Language-Action 模型，一套权重支持纯文本 / 纯 MANO / 文本+MANO 三种推理模式。">
+<link rel="canonical" href="https://kikato2022.github.io/projects/mano-vla/zh.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MANO-VLA">
+<meta property="og:title" content="MANO-VLA &#8212; 把手部运动作为 VLA 模型的一等条件模态">
+<meta property="og:description" content="一套 pi0 骨架，三种推理模式（纯文本 / 纯 MANO / 文本+MANO），由 modality dropout 切换。冻结的手部运动 tokenizer、离散 MANO token、监督只来自仿真。">
+<meta property="og:url" content="https://kikato2022.github.io/projects/mano-vla/zh.html">
+<meta property="og:image" content="https://kikato2022.github.io/projects/mano-vla/preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231d4ed8'/><text x='32' y='45' font-family='system-ui,sans-serif' font-size='38' font-weight='700' fill='%23ffffff' text-anchor='middle'>M</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">MANO<span>-</span>VLA</div>
+    <nav class="topnav">
+      <a href="#abstract">摘要</a>
+      <a href="#modes">三种模式</a>
+      <a href="#method">方法</a>
+      <a href="#data">数据</a>
+      <a href="#training">训练</a>
+      <a href="#results">结果</a>
+      <a href="#status">进度</a>
+      <a href="#repo">仓库结构</a>
+    </nav>
+    <a class="lang" href="index.html" lang="en">EN</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <p class="kicker">研究项目 &#183; 进行中</p>
+    <h1>MANO-VLA
+      <small>把手部运动作为 Vision-Language-Action 模型的一等条件模态</small>
+    </h1>
+    <p class="lede">
+      一套 <strong>&#960;<sub>0</sub></strong> 骨架，<strong>三种推理模式</strong> &#8212;&#8212; 纯文本、纯 MANO、
+      文本&nbsp;+&nbsp;MANO &#8212;&#8212; 由 modality dropout 在训练时切换。手部运动序列被编码成
+      <strong>离散 MANO token</strong> 追加到多模态前缀里，动作专家自动就能看到它们，不需要任何新的融合模块。
+    </p>
+    <ul class="pills">
+      <li>底座：&#960;<sub>0</sub>（PaliGemma-3B + 约 300M 动作专家）</li>
+      <li>MANO tokenizer：Being-H0 GRQ-VAE，冻结</li>
+      <li>数据：The Imitator Game（人类 + 仿真）</li>
+      <li>监督：只来自仿真</li>
+    </ul>
+    <div class="linkrow">
+      <a class="btn primary" href="#method">看架构</a>
+      <a class="btn" href="#data">数据</a>
+      <a class="btn" href="#results">held-out 数字</a>
+      <a class="btn" href="#repo">仓库结构</a>
+      <!-- TODO: 代码库公开后换成真实链接 -->
+      <span class="btn" aria-disabled="true" title="尚未公开">代码 &#183; 待公开</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>53</b><span>个操作任务，各 8 个层级（L0&#8211;L3 + L*-extend）</span></div>
+      <div class="stat"><b>10,760</b><span>段已提取 MANO 的人类演示（30 fps）</span></div>
+      <div class="stat"><b>16,240</b><span>段重采仿真 episode，212 个 variant</span></div>
+      <div class="stat"><b>1,200</b><span>段已渲三路视频的 episode（H1/H2/H3）</span></div>
+    </div>
+  </div>
+</div>
+
+<section id="abstract">
+  <div class="wrap">
+    <h2>摘要</h2>
+    <p class="sub">为什么要用手部运动，以及我们拿它做什么。</p>
+    <p>
+      Vision-Language-Action 模型的条件输入是像素和语言。而人类的操作行为，最精确的描述其实来自两只手的运动。
+      MANO-VLA 要问的是一个很简单的问题：<b>一段 MANO 手部姿态序列，能不能当作机器人策略的「任务级 prompt」？</b>
+    </p>
+    <p>
+      我们以 <b>&#960;<sub>0</sub></b> 为骨架（PaliGemma-3B 视觉语言专家 + 约 300M 参数的动作专家），把
+      <b>离散的手部运动 token</b> 追加到多模态前缀中。手部运动由<b>冻结的 Being-H0 GRQ-VAE</b> 编码
+      （码本 4096，<i>k</i>&nbsp;=&nbsp;4 层残差），再经码本 / 部位 / 组 / 层 / 手别 / 时间六类嵌入求和投影成
+      2048 维前缀 token。因为 MANO token 与图像、文本处在同一个前缀块里，动作专家本来就能注意到它们：
+      不需要额外融合模块，也不需要扩词表。
+    </p>
+    <p>
+      一套权重支持<b>三种推理模式</b>，训练时由 {文本, MANO} 上的 modality dropout 决定：<i>纯文本</i>、
+      <i>纯 MANO</i>、<i>文本&nbsp;+&nbsp;MANO</i>。监督信号只来自仿真（绝对关节角目标）；人类视频只提供 MANO
+      token，不产生任何 loss。训练按阶段解冻：先做运动学自监督的 Stage&nbsp;A，再训动作专家加 MANO 侧，最后上
+      PaliGemma LoRA。
+    </p>
+    <div class="note">
+      <b>当前状态。</b>整条链路 &#8212;&#8212; 数据 &#8594; transform &#8594; 模型 &#8594; 训练 &#8594; checkpoint &#8594;
+      held-out 评估 &#8212;&#8212; 已经端到端跑通。但今天有的是一次 600 步的冒烟跑和一套能用的评估口径，
+      <b>不是已完成的结论</b>。下面所有数字都标了实测日期。
+    </div>
+  </div>
+</section>
+
+<section id="modes">
+  <div class="wrap">
+    <h2><span class="num">01</span>三种模式，一套权重</h2>
+    <p class="sub">
+      图像和本体状态永不 dropout。modality dropout 只在文本 prompt 和整段 MANO 上独立采样，
+      于是恰好得到三种组合。
+    </p>
+
+    <div class="cards">
+      <div class="card">
+        <h3>纯文本</h3>
+        <p>常规 VLA：图像、机器人状态加一条语言指令。MANO 段整段删掉，连标签一起删。</p>
+        <span class="tag">image + state + text &#8594; action</span>
+      </div>
+      <div class="card mano">
+        <h3>纯 MANO</h3>
+        <p>完全不给语言。只靠手部运动 token 指定任务 &#8212;&#8212; 这正是让「MANO 携带了哪些文本给不了的信息」
+          变得可验证的前提。</p>
+        <span class="tag">image + state + MANO &#8594; action</span>
+      </div>
+      <div class="card mano">
+        <h3>文本 + MANO</h3>
+        <p>两种模态都在，模型自己决定怎么权衡。这是训练时的默认模式（概率 0.4）。</p>
+        <span class="tag">image + state + text + MANO &#8594; action</span>
+      </div>
+    </div>
+
+    <h3>dropout 规格</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>模式</th><th>图像（3 路）</th><th>状态</th><th>文本</th><th>MANO 段</th><th class="num">初始概率</th></tr></thead>
+        <tbody>
+          <tr><td><code>text_only</code></td><td>有</td><td>有</td><td>有</td><td>整段删（含标签）</td><td class="num">0.3</td></tr>
+          <tr><td><code>mano_only</code></td><td>有</td><td>有</td><td>删</td><td>有</td><td class="num">0.3</td></tr>
+          <tr><td><code>text+mano</code></td><td>有</td><td>有</td><td>有</td><td>有</td><td class="num">0.4</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:14px">
+      整段留、整段删，绝不逐 token 删：一旦出现 <code>&lt;mano&gt;</code>，<i>N</i> 个位置就必须填满，
+      某只手缺失时用 <i>absent</i> 占位，而不是把序列缩短。三种模式的 loss 必须分开报，
+      否则「能单独用」这件事无法验证。
+    </p>
+  </div>
+</section>
+
+<section id="method">
+  <div class="wrap">
+    <h2><span class="num">02</span>方法</h2>
+    <p class="sub">数据侧是一个冻结的 tokenizer；模型侧只有四条接线。</p>
+
+    <figure>
+      <img src="figure_arch.svg" alt="上半部分：人类视频经 HaWoR 得到 162 维 MANO 参数，再经冻结的 Being-H0 GRQ-VAE 得到离散 token id，最后投影为 2048 维 MANO 前缀 token。下半部分：pi0 前缀布局，块 A 放三路图像、文本与 MANO 段（att = 0），块 B 放 18 维状态（att = 1），块 C 放 50 步动作块（att = 1, 0, …, 0）。">
+      <figcaption>
+        冻结的一半把人类视频变成离散手部运动 token；被训练的一半把它们放进 &pi;<sub>0</sub> 前缀，
+        与图像、文本同处一块。
+      </figcaption>
+    </figure>
+
+    <h3>前缀布局与注意力</h3>
+    <p>
+      &pi;<sub>0</sub> 用逐 token 的 <code>att</code> 标记块边界，可见性按前缀和计算，因此 token 永远看不到更靠后的块。
+      MANO-VLA 做的事情只是「在块 A 里加 token，并把 flag 向量一起延长」，想得到的可见性关系是白拿的：
+    </p>
+    <ul class="clean">
+      <li><b>块 A</b> &#8212;&#8212; 三路图像（各 256 token）、文本 prompt（至多 256 token）与 MANO 段（约 1024 token），全部 <code>att = 0</code>，块内双向。</li>
+      <li><b>块 B</b> &#8212;&#8212; 18 维机器人状态投影成 1 个 token，<code>att = 1</code>：它看得到整个前缀，看不到动作。</li>
+      <li><b>块 C</b> &#8212;&#8212; 动作块，<code>att = 1, 0, &#8230;, 0</code>：动作专家看得到全部。</li>
+    </ul>
+    <p>
+      CPU 上有一套 23 项自检（<code>project/scripts/smoke_pi0_mano_prefix.py</code>），逐位核对形状、参数量、
+      缺手通路、梯度、掩码语义与三种模式是否与 &pi;<sub>0</sub> 的公式一致。
+    </p>
+
+    <h3>MANO 这一侧</h3>
+    <p>每个 token 携带码本 id、部位（腕 / 指）、组、残差层、手别，以及它覆盖的第一帧帧号。嵌入求和后只做一次投影：</p>
+<pre><span class="c"># 每个 token，一层投影；不扩词表</span>
+e = proj( motion_emb[id + 4096*part] + group_emb[group] + layer_emb[layer]
+          + hand_emb[hand] + time_proj( time_pe(frame0 / fps) ) )
+<span class="c"># 缺手时把内容整体换成 absent_emb[hand]，时间 PE 保留</span>
+<span class="c"># &lt;mano&gt; 与 &lt;/mano&gt; 是两个可学习的 2048 维向量</span></pre>
+    <p>
+      时间用<b>秒</b>编码而不是 token 序号，这样一个 token 锚定的是真实帧号，tokenizer 的 4 帧步长与位置编码解耦。
+      位置规则与文本一致：每 1 个 token 位置与 16 维观测交错，因此状态块从 18 维投影到模型宽度，动作维度取 16。
+    </p>
+
+    <h3>长前缀的代价</h3>
+    <p>
+      一个 token 覆盖 4 帧，这是对<b>单条 (部位, 组, 层) 链</b>说的；这样的链有
+      2&#8239;&#215;&#8239;2&#8239;&#215;&#8239;<i>k</i> 条。取 <i>k</i> = 4 时，一只手每个 15 帧窗就吐 64 个
+      token，实测每样本中位数 1024 个（双手）。于是 MANO 模式的前向开销约为纯文本的 4 倍
+      （同样 600 个样本：109&#8239;s vs 466&#8239;s），要不要压缩它目前是一个待拍板项。
+    </p>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <h2><span class="num">03</span>数据</h2>
+    <p class="sub">
+      只用 The Imitator Game：53 个双手操作任务、四个技能层级，每层都有「人类」和「仿真」两半。
+      仿真数据只要重采过，就用重采的那份，不用数据集自带那份。
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>量</th><th class="num">数值</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>任务数 / 层级数</td><td class="num">53 / 8</td><td>L0&#8211;L3，外加每层一个 <code>L*-extend</code></td></tr>
+          <tr><td>已提取 MANO 的人类段</td><td class="num">10,760</td><td><code>data/imitator_game/mano/&lt;task&gt;/&lt;level&gt;/human/</code></td></tr>
+          <tr><td>Being-H0 162 维转换产物</td><td class="num">10,760</td><td>另有 278 个缺手段的 <code>_absent</code> 版本</td></tr>
+          <tr><td>MANO 数据体积</td><td class="num">2.54 GB</td><td>只算 npz，30 fps，腕局部系</td></tr>
+          <tr><td>重采仿真 episode</td><td class="num">16,240</td><td>212 个 variant，位于 <code>_recollect/segments/</code></td></tr>
+          <tr><td>已渲三路视频的 episode</td><td class="num">1,200</td><td>H1/H2/H3 &#215; 8 层 &#215; 50 条</td></tr>
+          <tr><td>可三模式的 (任务, 层级) 单元</td><td class="num">201 / 223</td><td>另 11 个单元天然只有文本</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>监督与配对</h3>
+    <ul class="clean">
+      <li>一个训练样本 = 仿真里的一个时刻：<code>state = qpos[t]</code>（18 维），<code>actions = action[t : t+50]</code>（50&#8239;&#215;&#8239;16，绝对关节角目标）。</li>
+      <li>MANO 与文本都从同任务、同层级里借，随机配；<code>L*-extend</code> 退到它对应的基础层，并打上 <code>mano_borrowed</code> 标记。</li>
+      <li>文本标注取自仿真的描述字段。同一层级的描述是共享的 &#8212;&#8212; 这正是「纯语言交叉熵是个弱目标」的原因，见下面 Stage&nbsp;A。</li>
+      <li>第一阶段人类段不产生任何 loss，它存在的意义只是提供 MANO token。</li>
+    </ul>
+
+    <div class="note warn">
+      <b>数据上的硬规矩。</b>手性一律走「侧别先验」（最左框 = 左手），不用检测器的分类头 &#8212;&#8212; 这是全库体检
+      发现旧管线有闪烁和整只手丢失之后改的。仿真回放只走官方入口，且 L2 层级需要官方回放器没有做的
+      「镜像槽位还原」一步。这些规则记在 <code>AGENTS.md</code> 里，不每次重新讨论。
+    </div>
+  </div>
+</section>
+
+<section id="training">
+  <div class="wrap">
+    <h2><span class="num">04</span>训练</h2>
+    <p class="sub">分阶段解冻，以及一套真的能否掉想法的评估口径。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>阶段</th><th>可训部分</th><th>目标</th></tr></thead>
+        <tbody>
+          <tr><td><b>A</b></td><td>MANO 侧</td><td>以运动学自监督为主（重建 + 时间对比），语言交叉熵只作小权重辅助项。纯文本 CE 已被否定：文本在每个 (任务, 层级) 单元上只有几 bit 的信息量，而手部运动要密得多。</td></tr>
+          <tr><td><b>B1</b></td><td>动作专家 + MANO 侧（583.5M）</td><td>flow-matching 动作损失；VLM 保持冻结。</td></tr>
+          <tr><td><b>B2</b></td><td>再加 PaliGemma LoRA（r = 16）</td><td>对视觉与语言通路做低秩适配。</td></tr>
+          <tr><td><b>B3</b></td><td>全参微调（可选）</td><td>与 Stage A 的 batch 混跑，防止 MANO 通路被动作损失冲掉。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>评估口径</h3>
+    <p>
+      切分粒度是 episode，不是帧：在每个 <code>(任务, 层级)</code> 组内按固定步长抽段进验证集，
+      于是两次用同一个 <code>val_frac</code> 的运行必然落在同一批段上。在 H1/H2/H3 &#215; 8 层上，
+      这给出 <b>训练 1,080 段 / 412,374 样本</b>，<b>验证 120 段 / 45,611 样本</b>。
+    </p>
+    <p>
+      评估是确定性的 &#8212;&#8212; flow-matching 的初始噪声固定种子 &#8212;&#8212; 所以不同 checkpoint 可以直接比。
+      报数按模式、按 <code>(模式, 任务, 层级)</code>、按动作维分别给出，并且永远附带一条「预测 0」的基线，
+      让「什么都没学到」一眼可见。证据分三级：离线码本重建曲线、held-out 动作块 MAE、最后才是仿真闭环成功率。
+    </p>
+
+    <h3>首轮冒烟</h3>
+    <p>
+      Stage B1，从出厂 &#960;<sub>0</sub> 权重起跑，数据为 H1/H2/H3：600 步，batch 8，约 3.4&#8239;s/步，
+      峰值显存 21.3&#8239;GB / 24&#8239;GB。下表是日志点的摘录（每 200 步一个，外加第一个点）。
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th class="num">step</th><th class="num">总 loss</th><th class="num">text_only</th><th class="num">mano_only</th><th class="num">text+mano</th></tr></thead>
+        <tbody>
+          <tr><td class="num">20</td><td class="num">1.5596</td><td class="num">1.5851</td><td class="num">1.5557</td><td class="num">1.5463</td></tr>
+          <tr><td class="num">100</td><td class="num">1.2549</td><td class="num">1.2332</td><td class="num">1.0805</td><td class="num">1.0728</td></tr>
+          <tr><td class="num">300</td><td class="num">0.7496</td><td class="num">0.2441</td><td class="num">0.1782</td><td class="num">0.1802</td></tr>
+          <tr><td class="num">600</td><td class="num">0.4302</td><td class="num">0.1684</td><td class="num">0.1920</td><td class="num">0.2175</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:14px">
+      三种模式都在降，没有哪个是被牺牲掉的。单个 log 点抖动很大，因为它只聚合了 160 个样本、
+      且 flow-matching 的噪声每步现抽 &#8212;&#8212; 要看趋势，不要看单点。
+    </p>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <h2><span class="num">05</span>held-out 数字</h2>
+    <p class="sub">
+      生成动作块在 held-out episode 上的平均绝对误差，归一化 [&#8722;1,&#8239;1] 空间，每种模式 600 个样本。
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>checkpoint</th><th class="num">text_only</th><th class="num">mano_only</th><th class="num">text+mano</th><th class="num">预测 0 基线</th></tr></thead>
+        <tbody>
+          <tr><td>Stage B1, step 200</td><td class="num">0.7652</td><td class="num best">0.5046</td><td class="num best">0.5062</td><td class="num">0.5349</td></tr>
+          <tr><td>Stage B1, step 600</td><td class="num best">0.3495</td><td class="num">0.3736</td><td class="num">0.3734</td><td class="num">0.5349</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note warn">
+      <b>这只能当链路验证读，不能当结论。</b>单个 checkpoint、单一数据配比、只有 3 个任务、只有 600 步。
+      它的作用是证明判决链路能出数。step 200 时 MANO 两模式已经优于基线而纯文本还差过基线、step 600 时反过来
+      纯文本领先 &#8212;&#8212; 这个现象有意思，但样本太薄，不构成论断；而且这里的 loss 是 flow-matching 的 MSE，
+      与上面的 MAE 不能直接比较。
+    </div>
+  </div>
+</section>
+
+<section id="status">
+  <div class="wrap">
+    <h2><span class="num">06</span>进度与待解问题</h2>
+    <p class="sub">做完了什么、正在做什么、哪些是故意留着待定的。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>事项</th><th>状态</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>全库人类 MANO 提取</td><td><span class="pill ok">已完成</span></td><td>10,760 段，手性走侧别先验，另有插值补齐版本</td></tr>
+          <tr><td>仿真重采</td><td><span class="pill doing">进行中</span></td><td>H1/H2/H3 已带视频做完，其余任务目前只有轨迹</td></tr>
+          <tr><td>架构 v3（&#960;<sub>0</sub> 接线、token 契约、loader）</td><td><span class="pill ok">已完成</span></td><td>本机与服务器、CPU 与真模型上的自检均通过</td></tr>
+          <tr><td>端到端训练与评估链路</td><td><span class="pill ok">已完成</span></td><td>三个任务上的 600 步冒烟跑</td></tr>
+          <tr><td>练到收敛</td><td><span class="pill todo">未开始</span></td><td>要在训练服务器上跑长任务</td></tr>
+          <tr><td>消融</td><td><span class="pill todo">排队中</span></td><td><i>k</i> &#8712; {2,&#8239;4,&#8239;6,&#8239;8}；腕视图分辨率；<code>mano_only</code> 的语言删空方式；Stage A 目标</td></tr>
+          <tr><td>闭环成功率</td><td><span class="pill todo">未开始</span></td><td>等 held-out 判据把候选收敛到一两个配置之后再做</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>待解问题</h3>
+    <ul class="clean">
+      <li>约 1024 个 token 的 MANO 前缀能接受吗，还是应该压缩 tokenizer（减残差层 / 加大步长）？</li>
+      <li>纯 MANO 训练是真能迁移到操作，还是其实在吃视觉上下文的红利？</li>
+      <li>训练足够久之后，三种模式的取舍关系到底是什么？</li>
+      <li>人类示范能不能真的提升「仿真数据稀缺」那类任务上的策略？</li>
+    </ul>
+  </div>
+</section>
+
+<section id="repo">
+  <div class="wrap">
+    <h2><span class="num">07</span>仓库结构</h2>
+    <p class="sub">数据与 checkpoint 不入版本库；每一次设计迭代单独成文，永不覆盖。代码与设计文档目前放在私有仓库，公开后会在本页补链接。</p>
+    <dl class="map">
+      <div><dt>docs/design/</dt><dd>设计登记册：一次迭代一个文件，带状态列（当前 / 作废 / 草稿）与决策记录。<code>design_network_arch_v3.md</code> 是权威架构。</dd></div>
+      <div><dt>docs/site/</dt><dd>本页。直接打开 <code>index.html</code>（英文）或 <code>zh.html</code>（中文）。</dd></div>
+      <div><dt>project/mano_vla/pi0/</dt><dd>MANO 前缀的契约与编码器、<code>&#960;<sub>0</sub></code> 接线、数据 transform 与模型配置。</dd></div>
+      <div><dt>project/mano_vla/data/</dt><dd>数据集 loader、三模式采样器、段级切分与归一化统计。</dd></div>
+      <div><dt>project/scripts/</dt><dd>训练与评估入口、自检脚本、MANO 提取适配器、渲染器、仿真回放入口。</dd></div>
+      <div><dt>data/imitator_game/</dt><dd>Imitator Game 语料：<code>by_task/&lt;task&gt;/&lt;level&gt;/{human,sim}/</code>，逐段的 MANO 文件在 <code>mano/</code> 下另存一份。</dd></div>
+      <div><dt>benchmark/</dt><dd>vendored 的参考实现，只读。这里的东西一律不就地改。</dd></div>
+      <div><dt>AGENTS.md</dt><dd>项目铁律与已确认事实：唯一权威，任何从代码推出来的结论与它冲突都以它为准。</dd></div>
+    </dl>
+
+    <h3>复现命令</h3>
+<pre><span class="c"># CPU 自检：对照 pi0 的掩码公式核对 MANO 前缀接线</span>
+python project/scripts/smoke_pi0_mano_prefix.py
+
+<span class="c"># Stage B1 训练，held-out 固定为 10% 的 episode</span>
+python project/scripts/train_imitator_pi0.py \
+  --pretrained /path/to/pi0/model.safetensors --stage b1 --steps 600 \
+  --batch-size 8 --split train --val-frac 0.1 --run-name b1_h123_split
+
+<span class="c"># held-out 评估：固定噪声、按模式分别报数</span>
+python project/scripts/eval_imitator_pi0.py \
+  --checkpoint .cache/train/imitator_pi0/b1_h123_split/step0000600.pt \
+  --stage b1 --split val --val-frac 0.1 --max-samples 600 \
+  --out .cache/eval/b1_h123_split_step600.json</pre>
+    <p class="sub">
+      训练与评估必须传同一个 <code>val_frac</code>，否则评的就不是 held-out。批量任务在训练服务器上跑，
+      卡表按 GPU UUID 指定，不用字面序号。
+    </p>
+  </div>
+</section>
+
+<section id="cite">
+  <div class="wrap">
+    <h2><span class="num">08</span>引用</h2>
+    <p class="sub">论文还没写，所以这条是占位，作者名单也未定。</p>
+<pre>@misc{manovla2026,
+  title  = {MANO-VLA: Hand Motion as a Conditioning Modality for
+            Vision-Language-Action Models},
+  author = {TODO},
+  year   = {2026},
+  note   = {Work in progress}
+}</pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span><b>MANO-VLA</b> &#183; 项目主页</span>
+      <span>数字均为本机实测；逐段计数于 2026-09-28 重新测过。</span>
+      <span><a href="index.html" lang="en">English</a></span>
+      <span>代码与设计文档：目前为私有仓库。</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

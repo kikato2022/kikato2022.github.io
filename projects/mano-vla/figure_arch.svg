@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 580" width="1120" height="580"
+     role="img" aria-label="MANO-VLA architecture: frozen hand-motion tokenizer feeding a discrete MANO prefix into the pi0 backbone">
+  <title>MANO-VLA architecture</title>
+  <style>
+    .panel { fill: #f7f9fc; stroke: #dbe2ec; stroke-width: 1; }
+    .plabel { fill: #0f172a; font-size: 13.5px; font-weight: 700; }
+    .box { fill: #ffffff; stroke: #c8d3e2; stroke-width: 1; }
+    .boxacc { fill: #eef3ff; stroke: #b9cdfa; stroke-width: 1; }
+    .boxmano { fill: #e3ecff; stroke: #9dbcf7; stroke-width: 1; }
+    .blk { fill: #ffffff; stroke: #d7dfea; stroke-width: 1.4; }
+    .blka { fill: #f6f9ff; stroke: #b9cdfa; stroke-width: 1.4; }
+    .boxdash { fill: #fbfcff; stroke: #b9cdfa; stroke-width: 1.3; stroke-dasharray: 5 4; }
+    .t { fill: #0f172a; font-size: 12.5px; font-weight: 600; }
+    .ts { fill: #64748b; font-size: 10.5px; }
+    .hdr { fill: #0f172a; font-size: 12.5px; font-weight: 700; }
+    .note { fill: #475569; font-size: 11.5px; }
+    .t, .ts, .hdr, .note, .plabel { text-anchor: middle; }
+    .hdr, .plabel, .note.left { text-anchor: start; }
+    .flow { stroke: #8fa0b6; stroke-width: 1.4; fill: none; }
+  </style>
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8fa0b6"/>
+    </marker>
+  </defs>
+  <g font-family="system-ui, -apple-system, Segoe UI, Roboto, Microsoft YaHei, sans-serif">
+
+    <!-- ============ panel A ============ -->
+    <rect class="panel" x="20" y="18" width="1080" height="186" rx="14"/>
+    <text class="plabel" x="38" y="42">A &#183; Human hand motion &#8594; discrete MANO tokens (frozen pipeline, no gradients)</text>
+
+    <rect class="box" x="38" y="60" width="150" height="54" rx="9"/>
+    <text class="t" x="113" y="83">Human video</text>
+    <text class="ts" x="113" y="100">zed2i &#183; 30 fps</text>
+    <line class="flow" x1="190" y1="87" x2="208" y2="87" marker-end="url(#arw)"/>
+
+    <rect class="box" x="210" y="60" width="136" height="54" rx="9"/>
+    <text class="t" x="278" y="83">HaWoR</text>
+    <text class="ts" x="278" y="100">frozen</text>
+    <line class="flow" x1="348" y1="87" x2="366" y2="87" marker-end="url(#arw)"/>
+
+    <rect class="box" x="368" y="60" width="158" height="54" rx="9"/>
+    <text class="t" x="447" y="83">MANO params</text>
+    <text class="ts" x="447" y="100">162-d</text>
+    <line class="flow" x1="528" y1="87" x2="546" y2="87" marker-end="url(#arw)"/>
+
+    <rect class="boxacc" x="548" y="60" width="196" height="54" rx="9"/>
+    <text class="t" x="646" y="83">Being-H0 GRQ-VAE</text>
+    <text class="ts" x="646" y="100">frozen &#183; codebook 4096 &#183; k = 4</text>
+    <line class="flow" x1="746" y1="87" x2="764" y2="87" marker-end="url(#arw)"/>
+
+    <rect class="boxacc" x="766" y="60" width="316" height="54" rx="9"/>
+    <text class="t" x="924" y="83">Discrete token ids</text>
+    <text class="ts" x="924" y="100">+ part / group / layer / hand / frame0</text>
+
+    <line class="flow" x1="924" y1="116" x2="924" y2="126" marker-end="url(#arw)"/>
+    <rect class="boxmano" x="766" y="128" width="316" height="56" rx="9"/>
+    <text class="t" x="924" y="151">2048-d MANO prefix tokens</text>
+    <text class="ts" x="924" y="168">proj( summed codebook / structure / time embeddings )</text>
+
+    <text class="note left" x="38" y="142">Human demonstrations are used for MANO tokens only &#8212; they never</text>
+    <text class="note left" x="38" y="160">produce a training loss. Tokens are emitted per hand and per segment;</text>
+    <text class="note left" x="38" y="178">a segment yields 1024 tokens at the median (128 per 15-frame window).</text>
+
+    <!-- ============ panel B ============ -->
+    <rect class="panel" x="20" y="216" width="1080" height="350" rx="14"/>
+    <text class="plabel" x="38" y="240">B &#183; MANO-VLA: the MANO prefix inside pi0 (PaliGemma-3B VLM expert + ~300M action expert)</text>
+
+    <text class="hdr" x="38" y="266">att = 0 &#183; Block A &#8212; multimodal prefix, bidirectional within the block</text>
+    <rect class="blka" x="38" y="276" width="1044" height="74" rx="10"/>
+    <rect class="box" x="54" y="292" width="136" height="42" rx="8"/>
+    <text class="t" x="122" y="311">front view</text>
+    <text class="ts" x="122" y="326">256 tok</text>
+    <rect class="box" x="204" y="292" width="136" height="42" rx="8"/>
+    <text class="t" x="272" y="311">wrist_0</text>
+    <text class="ts" x="272" y="326">256 tok</text>
+    <rect class="box" x="354" y="292" width="136" height="42" rx="8"/>
+    <text class="t" x="422" y="311">wrist_1</text>
+    <text class="ts" x="422" y="326">256 tok</text>
+    <rect class="box" x="504" y="292" width="176" height="42" rx="8"/>
+    <text class="t" x="592" y="311">text prompt</text>
+    <text class="ts" x="592" y="326">&#8804; 256 tok &#183; dropped in mano_only</text>
+    <rect class="boxmano" x="694" y="292" width="372" height="42" rx="8"/>
+    <text class="t" x="880" y="311">&lt;mano&gt;  N &#215; MANO tokens  &lt;/mano&gt;</text>
+    <text class="ts" x="880" y="326">N &#8776; 1024 (p50) &#183; dropped in text_only</text>
+
+    <line class="flow" x1="1058" y1="352" x2="1058" y2="380" marker-end="url(#arw)"/>
+    <text class="hdr" x="38" y="372">att = 1 &#183; Block B &#8212; robot proprioception</text>
+    <rect class="blk" x="38" y="382" width="1044" height="50" rx="10"/>
+    <rect class="box" x="54" y="390" width="214" height="34" rx="8"/>
+    <text class="t" x="161" y="412">state (18-d) &#8594; 1 token</text>
+
+    <line class="flow" x1="1058" y1="434" x2="1058" y2="460" marker-end="url(#arw)"/>
+    <text class="hdr" x="38" y="442">att = 1, 0, &#8230;, 0 &#183; Block C &#8212; action chunk</text>
+    <rect class="blk" x="38" y="452" width="1044" height="64" rx="10"/>
+    <rect class="box" x="54" y="462" width="92" height="44" rx="8"/>
+    <text class="t" x="100" y="489">a0</text>
+    <rect class="box" x="158" y="462" width="92" height="44" rx="8"/>
+    <text class="t" x="204" y="489">a1</text>
+    <rect class="box" x="262" y="462" width="92" height="44" rx="8"/>
+    <text class="t" x="308" y="489">a2</text>
+    <rect class="boxdash" x="366" y="462" width="596" height="44" rx="8"/>
+    <text class="t" x="664" y="481">H = 50 steps &#215; 16-d absolute joint targets</text>
+    <text class="ts" x="664" y="497">flow-matching action expert</text>
+    <rect class="box" x="974" y="462" width="92" height="44" rx="8"/>
+    <text class="t" x="1020" y="489">a49</text>
+
+    <text class="note left" x="38" y="542">Modality dropout is sampled independently on {text, MANO segment}; images and state are never dropped. One set of weights &#8658; three inference modes.</text>
+  </g>
+</svg>
