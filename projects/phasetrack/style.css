@@ -142,6 +142,7 @@ p { margin: 0 0 14px; }
 /* ---------- figure ---------- */
 figure { margin: 26px 0 8px; }
 figure img { width: 100%; height: auto; display: block; }
+figure.fig-sm img { max-width: 600px; margin: 0 auto; }
 figcaption { font-size: 13.5px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
 
 /* ---------- tables ---------- */
