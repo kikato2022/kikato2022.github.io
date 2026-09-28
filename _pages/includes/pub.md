@@ -14,4 +14,6 @@
 
 ## Robotics
 
+[<a href="https://kikato2022.github.io/projects/mano-vla/" target="_blank" rel="noopener">MANO-VLA</a>]
+
 
