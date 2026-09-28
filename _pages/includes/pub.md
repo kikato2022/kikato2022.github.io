@@ -6,7 +6,8 @@
 ## CG
 
 [<a href="https://kikato2022.github.io/projects/hh.html" target="_blank" rel="noopener">project1</a>]<br>
-[<a href="https://kikato2022.github.io/projects/vividex" target="_blank" rel="noopener">project2</a>]
+[<a href="https://kikato2022.github.io/projects/vividex" target="_blank" rel="noopener">project2</a>]<br>
+[<a href="https://doi.org/10.1016/j.cag.2025.104333" target="_blank" rel="noopener">PhaseTrack</a>]
 
 ## CV
 
