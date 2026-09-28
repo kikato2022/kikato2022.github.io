@@ -1,4 +1,5 @@
 # 🔥 News
+- *2025.10*: Our work <a href="https://kikato2022.github.io/projects/phasetrack/" target="_blank" rel="noopener">PhaseTrack: Physics-Based Motion Tracking via Phase-Guided Motion Generation</a> is accepted by <i>Computers &amp; Graphics</i>.
 - *2024.09*: I set up this personal homepage.
 <details>
 <summary markdown="span">
