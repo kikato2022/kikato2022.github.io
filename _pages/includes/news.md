@@ -6,6 +6,6 @@
 </summary>
 <p></p>
 <ul>
-<li> <i>2024.08</i>:  One paper is accepted in my dream. </li>
+<li> <i>2024.08</i>: Chasing the dream of embodied intelligence &#8212; robots that learn dexterous manipulation from human hands. </li>
 </ul>
 </details>
