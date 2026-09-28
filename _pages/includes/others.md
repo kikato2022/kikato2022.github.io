@@ -8,3 +8,4 @@
 # 🏁 Services
 
 # 🏫 Teaching Assistants
+- *2026 - 2027 academic year*, Teaching Assistant, Computer Graphics (Undergraduate), [Shenzhen University](https://en.szu.edu.cn/), Shenzhen, China
