@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhaseTrack &#8212; physics-based motion tracking via phase-guided motion generation</title>
+<meta name="description" content="PhaseTrack is a phase-guided physics-based motion tracking controller: deep phase features learned by a periodic autoencoder condition a sparse mixture-of-experts policy with a detail encoder, giving state-of-the-art tracking accuracy at real-time inference cost. Computers &amp; Graphics 132 (2025) 104333.">
+<link rel="canonical" href="https://kikato2022.github.io/projects/phasetrack/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PhaseTrack">
+<meta property="og:title" content="PhaseTrack &#8212; physics-based motion tracking via phase-guided motion generation">
+<meta property="og:description" content="Phase-guided physics-based motion tracking with a sparse mixture-of-experts policy and a detail encoder.">
+<meta property="og:url" content="https://kikato2022.github.io/projects/phasetrack/">
+<meta property="og:image" content="https://kikato2022.github.io/projects/phasetrack/figs/fig1_pipeline.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%232e7d5b'/><text x='32' y='45' font-family='system-ui,sans-serif' font-size='38' font-weight='700' fill='%23ffffff' text-anchor='middle'>P</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">Phase<span>Track</span></div>
+    <nav class="topnav">
+      <a href="#pipeline">Pipeline</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#demo">Demo</a>
+      <a href="#bibtex">BibTeX</a>
+    </nav>
+    <a class="lang" href="https://kikato2022.github.io/" title="Back to the homepage">Home</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <p class="kicker">Journal paper &#183; Computers &amp; Graphics 2025</p>
+    <h1>PhaseTrack
+      <small>Physics-based motion tracking via phase-guided motion generation</small>
+    </h1>
+    <p class="authors">
+      <b>Ruikun Zheng</b><sup>&#8224;</sup> &nbsp;&#183;&nbsp; <b>Chengjie Mou</b><sup>&#8224;</sup> &nbsp;&#183;&nbsp; <b>Ruizhen Hu</b><sup>&#8727;</sup><br>
+      <span>College of Computer Science &amp; Software Engineering, Shenzhen University, Shenzhen, China</span><br>
+      <span><sup>&#8224;</sup> Equal contribution. &nbsp; <sup>&#8727;</sup> Corresponding author.</span>
+    </p>
+    <p class="lede">
+      A physics-based character controller that injects <strong>deep phase features</strong> &#8212; learned by a periodic
+      autoencoder &#8212; into a <strong>sparse mixture-of-experts</strong> policy, and adds a <strong>detail encoder</strong>
+      that recovers high-frequency motion from the reference target state. It reaches
+      <strong>state-of-the-art tracking accuracy</strong> while holding real-time inference cost.
+    </p>
+    <ul class="pills">
+      <li>Computers &amp; Graphics 132 (2025) 104333</li>
+      <li>Special Section on CAD/Graphics 2025</li>
+      <li>Received 27 Jun 2025 &#183; Accepted 20 Jul 2025</li>
+      <li>DOI 10.1016/j.cag.2025.104333</li>
+    </ul>
+    <div class="linkrow">
+      <a class="btn primary" href="https://doi.org/10.1016/j.cag.2025.104333" target="_blank" rel="noopener">Paper &#183; Elsevier</a>
+      <a class="btn" href="#method">Method</a>
+      <a class="btn" href="#results">Results</a>
+      <a class="btn" href="#bibtex">BibTeX</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>41.60</b><span>MPJPE on DFaust &#8212; lowest of the nine methods compared</span></div>
+      <div class="stat"><b>3.24</b><span>PAMPJPE on 100STYLE &#8212; lowest of the nine methods compared</span></div>
+      <div class="stat"><b>12 &#8594; 4</b><span>experts in the SMoE decoder, activated per sample</span></div>
+      <div class="stat"><b>32.3 M</b><span>FLOPs &#8212; below every baseline at comparable capacity</span></div>
+    </div>
+  </div>
+</div>
+
+<section id="pipeline">
+  <div class="wrap">
+    <h2><span class="num">01</span>Pipeline</h2>
+    <p class="sub">Two stages: learn deep phase features from motion, then imitate reference motion with a phase-conditioned controller.</p>
+    <figure>
+      <img src="figs/fig1_pipeline.png" alt="PhaseTrack pipeline: deep phase feature learning and motion imitation learning" loading="lazy">
+      <figcaption><b>Figure 1.</b> Our pipeline has two stages: deep phase feature learning (left) and motion imitation (right).
+        A periodic autoencoder (PAE) extracts phase features &#966;<sub>t</sub> from motion frame windows using full-body velocities.
+        Coarse (E<sub>c</sub>) and detail (E<sub>d</sub>) encoders generate a latent code z<sub>t</sub> from state s<sub>t</sub>, &#966;<sub>t</sub> and target s<sub>t+1</sub>.
+        An SMoE decoder D predicts the next phase and the action a<sub>t</sub>, while a world model W estimates the next state &#349;<sub>t+1</sub> during training.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="abstract">
+  <div class="wrap">
+    <h2><span class="num">02</span>Abstract</h2>
+    <p class="sub">The abstract as published.</p>
+    <p>
+      In this work, we introduce PhaseTrack, a novel phase-guided physics-based motion tracking method that enhances
+      motion generation quality by leveraging deep phase features learned from a periodic autoencoder. PhaseTrack
+      employs a novel integration of phase-conditioned sparse mixture of experts and hierarchical
+      encoder&#8211;sparse mixture of experts architecture conditioned on phase features within a world model framework,
+      enabling the effective extraction of information from highly abstract phase representations without
+      compromising real-time inference performance. Additionally, we propose a detail encoder that captures
+      high-frequency motion details from reference target states, ensuring the realism of the generated motions. Our
+      comprehensive evaluations demonstrate that PhaseTrack outperforms state-of-the-art model-based motion tracking
+      methods in terms of precision and motion fidelity.
+    </p>
+    <div class="note">
+      <b>In one line.</b> Phase features alone are too abstract to drive joint torques, and the state alone loses
+      high-frequency detail. PhaseTrack conditions a sparse mixture-of-experts controller on the phase, and hands the
+      detail back to a second encoder that reads the reference target state.
+    </div>
+  </div>
+</section>
+
+<section id="method">
+  <div class="wrap">
+    <h2><span class="num">03</span>Method</h2>
+    <p class="sub">Phase conditioning inside a world-model framework, plus a dedicated path for high-frequency detail.</p>
+
+    <h3>Stage 1 &#183; Deep phase feature learning</h3>
+    <p>
+      The periodic autoencoder takes velocities <i>V<sub>t</sub></i> over a sliding window of length <i>T</i> and passes
+      them through convolution layers and a differentiable FFT layer, yielding amplitudes <i>a<sub>t</sub></i>, offsets
+      <i>b<sub>t</sub></i> and frequencies <i>f<sub>t</sub></i>; a fully-connected branch predicts the phase shift
+      <i>p<sub>t</sub></i>. These parameters reconstruct the velocity features, and the resulting features
+      <i>&#966;<sub>t</sub></i> summarise the spatio-temporal dynamics of the motion &#8212; the conditioning signal used by
+      the controller.
+    </p>
+
+    <h3>Stage 2 &#183; Phase-guided control policy</h3>
+    <p>
+      The policy predicts an action from the current state, the phase feature and the next reference frame. It is
+      supervised through a differentiable world model, so the imitation objective becomes a distance between target
+      and predicted states &#8212; this is what keeps training sample-efficient and lets the controller transfer across
+      simulators.
+    </p>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Coarse encoder</h3>
+        <p>Maps the character state together with the deep phase feature to a coarse latent code, using 3 linear layers
+          with hidden size 512.</p>
+        <span class="tag">E_c( &#966;_t, s_t ) &#8594; z^c_t</span>
+      </div>
+      <div class="card hi">
+        <h3>Detail encoder</h3>
+        <p>Phase features cannot carry non-periodic detail, so a second encoder reads the reference target frame and
+          produces a complementary code.</p>
+        <span class="tag">E_d( s~_t+1, z^c_t ) &#8594; z^d_t</span>
+      </div>
+      <div class="card">
+        <h3>SMoE decoder</h3>
+        <p>12 experts, 4 activated per sample through a sparsity-and-softmax gate. A larger expert pool without the
+          inference cost of activating all of it.</p>
+        <span class="tag">z_t = z^c_t + z^d_t</span>
+      </div>
+      <div class="card">
+        <h3>World model</h3>
+        <p>Estimates the next state during training; at inference the physical simulator executes the policy and tracks
+          the target state.</p>
+        <span class="tag">&#349;_t+1 = W( s_t, a_t )</span>
+      </div>
+    </div>
+
+    <figure>
+      <img src="figs/fig2_decoder.png" alt="Detailed architecture of the phase-guided sparse mixture of experts decoder" loading="lazy">
+      <figcaption><b>Figure 2.</b> Detailed architecture of the phase-guided sparse mixture of experts decoder.</figcaption>
+    </figure>
+
+    <h3>Training setup</h3>
+    <div class="table-wrap">
+      <table>
+        <tbody>
+          <tr><th>Simulator</th><td>ODE with PD control; 120 Hz simulation, 20 Hz policy</td></tr>
+          <tr><th>Motion data</th><td>LaFAN and AMASS, interactive motions excluded, retargeted to the simulated character</td></tr>
+          <tr><th>PAE training</th><td>AdamW, lr 10<sup>&#8722;4</sup>, batch 32, 100 epochs (about 1 day)</td></tr>
+          <tr><th>Policy + world model</th><td>RAdam, lr 10<sup>&#8722;5</sup> / 10<sup>&#8722;3</sup>, batches 2048 / 512, 20k iterations (about 7 days)</td></tr>
+          <tr><th>Network</th><td>Latent code 256-d, hidden size 512, GELU with dropout 0.1, 12 experts (4 active)</td></tr>
+          <tr><th>Hardware</th><td>NVIDIA RTX 3090, Intel i9-13900K</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <h2><span class="num">04</span>Results</h2>
+    <p class="sub">Locomotion (100STYLE) and non-locomotion (DFaust) tracking, against world-model baselines and phase-augmented versions of them.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th class="num">DFaust MPJPE</th>
+            <th class="num">DFaust PAMPJPE</th>
+            <th class="num">100STYLE MPJPE</th>
+            <th class="num">100STYLE PAMPJPE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>SuperTrack</td><td class="num">67.64</td><td class="num">6.70</td><td class="num">158.22</td><td class="num">6.27</td></tr>
+          <tr><td>PhysicsVAE</td><td class="num">76.92</td><td class="num">24.79</td><td class="num">201.25</td><td class="num">37.74</td></tr>
+          <tr><td>ControlVAE</td><td class="num">76.77</td><td class="num">29.72</td><td class="num">200.57</td><td class="num">39.30</td></tr>
+          <tr><td>MoconVQ</td><td class="num">45.27</td><td class="num">5.67</td><td class="num">160.01</td><td class="num">7.70</td></tr>
+          <tr><td>SuperTrack + phase</td><td class="num">65.12</td><td class="num">6.22</td><td class="num">155.13</td><td class="num">6.07</td></tr>
+          <tr><td>PhysicsVAE + phase</td><td class="num">73.22</td><td class="num">26.81</td><td class="num">202.33</td><td class="num">33.14</td></tr>
+          <tr><td>ControlVAE + phase</td><td class="num">72.34</td><td class="num">23.53</td><td class="num">199.32</td><td class="num">37.32</td></tr>
+          <tr><td>MoconVQ + phase</td><td class="num">46.47</td><td class="num">5.96</td><td class="num">163.47</td><td class="num">7.52</td></tr>
+          <tr><td><b>PhaseTrack (ours)</b></td><td class="num best">41.60</td><td class="num best">3.41</td><td class="num best">151.26</td><td class="num best">3.24</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:14px">Table 2 of the paper. Lower is better on both metrics.</p>
+
+    <ul class="clean">
+      <li>On DFaust, MPJPE and PAMPJPE drop by <b>8.1%</b> and <b>39.9%</b> against MoconVQ &#8212; the aperiodic case.</li>
+      <li>On 100STYLE, MPJPE and PAMPJPE improve by <b>2.5%</b> and <b>46.6%</b> over SuperTrack + phase &#8212; the periodic case.</li>
+      <li>Phase-augmented baselines improve over their plain versions but stay behind: concatenating phase features is not the same as conditioning on them.</li>
+      <li>MoconVQ + phase gets <i>worse</i> than MoconVQ on both datasets, which the paper attributes to phase features conflicting with its vector-quantisation mechanism.</li>
+    </ul>
+
+    <figure>
+      <img src="figs/fig3_qualitative.jpg" alt="Qualitative comparison of PhaseTrack to other methods on DFaust and 100STYLE" loading="lazy">
+      <figcaption><b>Figure 3.</b> Qualitative comparison of our method to other methods. To observe the differences in
+        motion, the joint motion curves of different parts of the character are visualised: yellow is the hip, green the
+        left foot, purple the right foot. Line segments become more opaque over time. Red boxes highlight movements that
+        do not conform to the target motion.</figcaption>
+    </figure>
+
+    <h3>Compute at comparable capacity</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th class="num">FLOPs (M)</th><th class="num">Params (M)</th></tr></thead>
+        <tbody>
+          <tr><td>SuperTrack</td><td class="num">32.5</td><td class="num">16.2</td></tr>
+          <tr><td>PhysicsVAE</td><td class="num">33.2</td><td class="num">16.9</td></tr>
+          <tr><td>ControlVAE</td><td class="num">34.7</td><td class="num">17.3</td></tr>
+          <tr><td>MoconVQ</td><td class="num">35.5</td><td class="num">57.1</td></tr>
+          <tr><td><b>PhaseTrack (ours)</b></td><td class="num best">32.3</td><td class="num">41.5</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:14px">Table 1 of the paper. The accuracy comes without paying extra inference compute.</p>
+
+    <h3>Ablation</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Variant</th>
+            <th class="num">DFaust MPJPE</th>
+            <th class="num">DFaust PAMPJPE</th>
+            <th class="num">100STYLE MPJPE</th>
+            <th class="num">100STYLE PAMPJPE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>w/o phase</td><td class="num">50.64</td><td class="num">5.02</td><td class="num">158.10</td><td class="num">6.14</td></tr>
+          <tr><td>w/o detail encoder</td><td class="num">68.73</td><td class="num">9.19</td><td class="num">171.34</td><td class="num">9.73</td></tr>
+          <tr><td>combined encoder</td><td class="num">41.57</td><td class="num">3.49</td><td class="num">153.56</td><td class="num">4.29</td></tr>
+          <tr><td><b>full</b></td><td class="num">41.60</td><td class="num">3.41</td><td class="num best">151.26</td><td class="num best">3.24</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:14px">Table 3 of the paper. Dropping the detail encoder hurts most; keeping the two encoders separate edges out a single shared one.</p>
+
+    <figure>
+      <img src="figs/fig6_experts.png" alt="Expert activation distributions under different motion types and architectures" loading="lazy">
+      <figcaption><b>Figure 6.</b> Expert activation distributions under different motion types and architectural settings.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="demo">
+  <div class="wrap">
+    <h2><span class="num">05</span>Demo</h2>
+    <p class="sub">PhaseTrack also works as the low-level controller under a high-level motion-matching loop.</p>
+    <figure>
+      <img src="figs/fig7_demo.jpg" alt="A character executing a circular direction change under PhaseTrack control" style="max-width:620px;margin:0 auto" loading="lazy">
+      <figcaption><b>Figure 7.</b> PhaseTrack control demonstration: the character executes a circular direction change.
+        A high-level loop matches a target clip and its phase at each step, then PhaseTrack tracks the matched phase and
+        target state frame by frame.</figcaption>
+    </figure>
+    <div class="note">
+      <b>Why the phase matters here.</b> A high-level controller can hand over a phase trajectory rather than a
+      kinematic clip, which is what makes the interface between matching and physics clean: the matched phase advances
+      the controller, and the detail encoder keeps the resulting motion from being over-smoothed.
+    </div>
+  </div>
+</section>
+
+<section id="bibtex">
+  <div class="wrap">
+    <h2><span class="num">06</span>BibTeX</h2>
+    <p class="sub">Please cite the published version.</p>
+<pre>@article{zheng2025phasetrack,
+  title   = {PhaseTrack: Physics-based motion tracking via phase-guided motion generation},
+  author  = {Zheng, Ruikun and Mou, Chengjie and Hu, Ruizhen},
+  journal = {Computers &amp; Graphics},
+  volume  = {132},
+  pages   = {104333},
+  year    = {2025},
+  doi     = {10.1016/j.cag.2025.104333}
+}</pre>
+    <p class="sub">
+      Ruikun Zheng and Chengjie Mou contributed equally; Ruizhen Hu is the corresponding author.
+      This work was supported in part by NSFC (62322207).
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span><b>PhaseTrack</b> &#183; Computers &amp; Graphics 132 (2025) 104333</span>
+      <span>Figures reproduced from the published article. &#169; 2025 Elsevier Ltd.</span>
+      <span>Page by <a href="https://kikato2022.github.io/">Kikato</a>.</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
