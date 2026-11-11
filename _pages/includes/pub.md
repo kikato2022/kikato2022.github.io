@@ -15,4 +15,6 @@
 
 [<a href="https://kikato2022.github.io/projects/mano-vla/" target="_blank" rel="noopener">MANO-VLA</a>]
 
+[<a href="https://arxiv.org/abs/2511.13327" target="_blank" rel="noopener">ZeroDexGrasp</a>]
+
 
